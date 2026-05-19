@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라라스윗 무상노출 트래커</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --border: #E5E3DC;
+  --text: #1A1917;
+  --muted: #7A7873;
+  --accent: #2D6A4F;
+  --accent-light: #E8F5EE;
+  --accent-text: #1B4332;
+  --danger: #C0392B;
+  --danger-light: #FDEDEC;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Noto Sans KR', sans-serif;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+.tabs { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 24px; width: fit-content; }
+.tab { padding: 7px 18px; border-radius: var(--radius-sm); border: none; background: transparent; font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.tab.active { background: var(--text); color: #fff; }
+.tab:hover:not(.active) { background: var(--bg); color: var(--text); }
+.pane { display: none; }
+.pane.active { display: block; }
+
+.main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.stat-val { font-size: 28px; font-weight: 700; letter-spacing: -1px; color: var(--text); font-family: var(--mono); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; }
+.card-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+.filter-row2 { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+
+select, input[type="text"], input[type="date"] { font-family: var(--sans); font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 12px; background: var(--surface); color: var(--text); outline: none; transition: border-color 0.15s; }
+select:focus, input:focus { border-color: var(--accent); }
+.search-input { flex: 1; min-width: 160px; }
+
+button.btn { font-family: var(--sans); font-size: 13px; font-weight: 500; border-radius: var(--radius-sm); padding: 7px 14px; cursor: pointer; transition: all 0.15s; border: 1px solid var(--border); background: var(--surface); color: var(--text); display: inline-flex; align-items: center; gap: 5px; }
+button.btn:hover { background: var(--bg); }
+button.btn:active { transform: scale(0.98); }
+button.btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+button.btn-primary:hover { opacity: 0.88; }
+button.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.btn-accent:hover { opacity: 0.88; }
+button.btn-danger { color: var(--danger); border-color: #f5c6c6; background: var(--danger-light); }
+button.btn-danger:hover { background: #fbd5d5; }
+
+.period-btn { font-size: 12px; padding: 5px 10px; }
+.period-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+.date-sep { font-size: 12px; color: var(--muted); }
+
+.kw-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.kw-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 99px; padding: 5px 12px; font-size: 13px; font-family: var(--mono); color: var(--text); }
+.kw-chip button { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; line-height: 1; padding: 0; display: flex; align-items: center; transition: color 0.15s; }
+.kw-chip button:hover { color: var(--danger); }
+.kw-add-row { display: flex; gap: 8px; align-items: center; }
+
+.notice { background: var(--accent-light); border: 1px solid #a9dfbf; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; color: var(--accent-text); margin-top: 12px; line-height: 1.7; }
+
+.result-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.result-item:last-child { border-bottom: none; }
+.result-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.badge-blog { background: var(--accent-light); color: var(--accent-text); }
+.badge-cafe { background: #EBF5FB; color: #1A5276; }
+.badge-kw { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.result-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+.result-content { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 8px; }
+.result-link { font-size: 12px; color: var(--accent); text-decoration: none; font-family: var(--mono); }
+.result-link:hover { text-decoration: underline; }
+.meta-text { font-size: 11px; color: var(--muted); }
+
+.empty { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 14px; line-height: 2; }
+.loading { text-align: center; padding: 48px; color: var(--muted); font-size: 13px; }
+.updated { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.result-count { font-size: 12px; color: var(--muted); padding-top: 16px; margin-bottom: 8px; }
+.status-msg { font-size: 12px; color: var(--accent); font-weight: 500; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    라라스윗 무상노출 트래커
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="updated" id="updated-at"></span>
+    <button class="btn" onclick="exportCSV()">↓ CSV</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('results', this)">결과 보기</button>
+    <button class="tab" onclick="showTab('keywords', this)">키워드 관리</button>
+  </div>
+
+  <!-- 결과 보기 -->
+  <div class="pane active" id="pane-results">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">전체</div><div class="stat-val" id="s-total">—</div></div>
+      <div class="stat-card"><div class="stat-label">블로그</div><div class="stat-val" id="s-blog">—</div></div>
+      <div class="stat-card"><div class="stat-label">카페</div><div class="stat-val" id="s-cafe">—</div></div>
+      <div class="stat-card"><div class="stat-label">기간 내 결과</div><div class="stat-val" id="s-filtered">—</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <select id="f-kw" onchange="render()">
+        <option value="">전체 키워드</option>
+      </select>
+      <select id="f-pl" onchange="render()">
+        <option value="">전체 채널</option>
+        <option value="네이버 블로그">블로그</option>
+        <option value="네이버 카페">카페</option>
+      </select>
+      <input type="text" class="search-input" id="f-q" placeholder="내용 검색..." oninput="render()">
+    </div>
+
+    <div class="filter-row2">
+      <button class="btn period-btn active" onclick="setPeriod(7, this)">1주</button>
+      <button class="btn period-btn" onclick="setPeriod(30, this)">1개월</button>
+      <button class="btn period-btn" onclick="setPeriod(90, this)">3개월</button>
+      <button class="btn period-btn" onclick="setPeriod(0, this)">전체</button>
+      <span class="date-sep">또는</span>
+      <input type="date" id="f-from" onchange="clearPeriodBtn(); render()">
+      <span class="date-sep">~</span>
+      <input type="date" id="f-to" onchange="clearPeriodBtn(); render()">
+      <button class="btn" onclick="resetDates()">초기화</button>
+    </div>
+
+    <div class="card" style="padding:0 24px">
+      <div class="result-count" id="result-count"></div>
+      <div id="result-list"><div class="loading">데이터 불러오는 중...</div></div>
+    </div>
+  </div>
+
+  <!-- 키워드 관리 -->
+  <div class="pane" id="pane-keywords">
+    <div class="card">
+      <div class="card-title">검색 키워드 관리</div>
+      <div class="kw-grid" id="kw-chips"></div>
+      <div class="kw-add-row">
+        <input type="text" id="new-kw" placeholder="새 키워드 입력..." style="flex:1" onkeydown="if(event.key==='Enter') addKw()">
+        <button class="btn btn-accent" onclick="addKw()">+ 추가</button>
+        <span class="status-msg" id="kw-status"></span>
+      </div>
+      <div class="notice" style="margin-top:16px">
+        키워드를 추가하거나 삭제한 뒤 <strong>GitHub의 tracker.py 파일도 함께 업데이트</strong>해야 다음 자동 수집에 반영돼요.<br>
+        아래 "tracker.py 코드 복사" 버튼을 눌러 GitHub에 붙여넣기 해주세요.
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary" onclick="copyTrackerCode()">tracker.py 코드 복사</button>
+        <span class="status-msg" id="copy-status"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">현재 수집된 키워드별 현황</div>
+      <div id="kw-stats"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let allData = [];
+let keywords = JSON.parse(localStorage.getItem('ls_keywords') || '["라라스윗요거트바","라라스윗망고요거트바","라라스윗듬뿍바","라라스윗딸기듬뿍바","라라스윗제로바","애플망고생요거트바"]');
+
+function saveKeywords() {
+  localStorage.setItem('ls_keywords', JSON.stringify(keywords));
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'keywords') { renderKwChips(); renderKwStats(); }
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('data.json?t=' + Date.now());
+    allData = await res.json();
+    allData.sort((a,b) => b.date.localeCompare(a.date));
+    updateStats();
+    populateFilters();
+    setDefaultDates(7);
+    render();
+    document.getElementById('updated-at').textContent = '마지막 수집: ' + (allData[0]?.collected || '—');
+  } catch(e) {
+    document.getElementById('result-list').innerHTML = '<div class="empty">데이터를 불러올 수 없어요.<br>GitHub Actions가 아직 실행 전이거나 data.json이 없을 수 있어요.</div>';
+  }
+}
+
+function updateStats() {
+  document.getElementById('s-total').textContent = allData.length;
+  document.getElementById('s-blog').textContent = allData.filter(d=>d.platform==='네이버 블로그').length;
+  document.getElementById('s-cafe').textContent = allData.filter(d=>d.platform==='네이버 카페').length;
+}
+
+function populateFilters() {
+  const kws = [...new Set(allData.map(d=>d.keyword))];
+  const sel = document.getElementById('f-kw');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">전체 키워드</option>' + kws.map(k=>`<option value="${k}"${k===cur?' selected':''}>${k}</option>`).join('');
+}
+
+function setDefaultDates(days) {
+  if (days === 0) {
+    document.getElementById('f-from').value = '';
+    document.getElementById('f-to').value = '';
+    return;
+  }
+  const to = new Date();
+  const from = new Date(Date.now() - days * 86400000);
+  document.getElementById('f-to').value = to.toISOString().slice(0,10);
+  document.getElementById('f-from').value = from.toISOString().slice(0,10);
+}
+
+function setPeriod(days, btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  setDefaultDates(days);
+  render();
+}
+
+function clearPeriodBtn() {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+}
+
+function resetDates() {
+  setPeriod(7, document.querySelector('.period-btn'));
+}
+
+function getFiltered() {
+  const kw = document.getElementById('f-kw').value;
+  const pl = document.getElementById('f-pl').value;
+  const q = document.getElementById('f-q').value.toLowerCase();
+  const from = document.getElementById('f-from').value;
+  const to = document.getElementById('f-to').value;
+  return allData.filter(d =>
+    (!kw || d.keyword === kw) &&
+    (!pl || d.platform === pl) &&
+    (!q || d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q) || (d.source||'').toLowerCase().includes(q)) &&
+    (!from || d.date >= from) &&
+    (!to || d.date <= to)
+  );
+}
+
+function render() {
+  const filtered = getFiltered();
+  document.getElementById('s-filtered').textContent = filtered.length;
+  document.getElementById('result-count').textContent = filtered.length + '건';
+  const list = document.getElementById('result-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty">${allData.length ? '검색 결과가 없어요.' : '아직 수집된 데이터가 없어요.'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(d=>`
+    <div class="result-item">
+      <div class="result-meta">
+        <span class="badge ${d.platform==='네이버 블로그'?'badge-blog':'badge-cafe'}">${d.platform}</span>
+        <span class="badge badge-kw">${d.keyword}</span>
+        ${d.source ? `<span class="meta-text">${d.source}</span>` : ''}
+        <span class="meta-text">${d.date}</span>
+      </div>
+      <div class="result-title">${d.title}</div>
+      <div class="result-content">${d.content || '—'}</div>
+      <a href="${d.link}" class="result-link" target="_blank">원문 보기 →</a>
+    </div>
+  `).join('');
+}
+
+function renderKwChips() {
+  document.getElementById('kw-chips').innerHTML = keywords.map((k,i) => `
+    <div class="kw-chip">
+      <span>${k}</span>
+      <button onclick="removeKw(${i})" title="삭제">×</button>
+    </div>
+  `).join('');
+}
+
+function renderKwStats() {
+  const counts = {};
+  allData.forEach(d => { counts[d.keyword] = (counts[d.keyword]||0) + 1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if (!sorted.length) {
+    document.getElementById('kw-stats').innerHTML = '<div style="color:var(--muted);font-size:13px">수집된 데이터가 없어요.</div>';
+    return;
+  }
+  document.getElementById('kw-stats').innerHTML = sorted.map(([k,v])=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="flex:1;font-size:13px;font-family:var(--mono)">${k}</span>
+      <span style="font-size:13px;font-weight:700;font-family:var(--mono)">${v}건</span>
+      <div style="width:120px;height:6px;background:var(--border);border-radius:99px;overflow:hidden">
+        <div style="height:100%;background:var(--accent);width:${Math.round(v/sorted[0][1]*100)}%;border-radius:99px"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addKw() {
+  const inp = document.getElementById('new-kw');
+  const v = inp.value.trim();
+  if (!v) return;
+  if (keywords.includes(v)) {
+    showStatus('kw-status', '이미 있는 키워드예요.');
+    return;
+  }
+  keywords.push(v);
+  saveKeywords();
+  inp.value = '';
+  renderKwChips();
+  populateFilters();
+  showStatus('kw-status', '추가됐어요!');
+}
+
+function removeKw(i) {
+  if (!confirm(`"${keywords[i]}" 키워드를 삭제할까요?`)) return;
+  keywords.splice(i, 1);
+  saveKeywords();
+  renderKwChips();
+  populateFilters();
+  showStatus('kw-status', '삭제됐어요.');
+}
+
+function showStatus(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  setTimeout(() => el.textContent = '', 2500);
+}
+
+function copyTrackerCode() {
+  const code = `import urllib.request
+import urllib.parse
+import json
+import os
+import re
+from datetime import datetime
+
+CLIENT_ID = os.environ["NAVER_CLIENT_ID"]
+CLIENT_SECRET = os.environ["NAVER_CLIENT_SECRET"]
+
+KEYWORDS = ${JSON.stringify(keywords, null, 2)}
+
+def search(query, stype):
+    url = f"https://openapi.naver.com/v1/search/{stype}.json?query={urllib.parse.quote(query)}&display=50&sort=date"
+    req = urllib.request.Request(url)
+    req.add_header("X-Naver-Client-Id", CLIENT_ID)
+    req.add_header("X-Naver-Client-Secret", CLIENT_SECRET)
+    try:
+        res = urllib.request.urlopen(req)
+        return json.loads(res.read().decode("utf-8")).get("items", [])
+    except Exception as e:
+        print(f"오류: {stype}/{query}: {e}")
+        return []
+
+def clean(t):
+    return re.sub(r"<[^>]+>", "", t)
+
+def parse_date(d):
+    for fmt in ["%a, %d %b %Y %H:%M:%S +0900", "%Y%m%d"]:
+        try:
+            return datetime.strptime(d, fmt).strftime("%Y-%m-%d")
+        except:
+            pass
+    return d
+
+existing = []
+if os.path.exists("data.json"):
+    with open("data.json", "r", encoding="utf-8") as f:
+        existing = json.load(f)
+
+seen = set(d["link"] for d in existing)
+new_items = []
+
+for kw in KEYWORDS:
+    print(f"검색 중: {kw}")
+    for stype, label in [("blog", "네이버 블로그"), ("cafearticle", "네이버 카페")]:
+        for item in search(kw, stype):
+            link = item.get("link", "")
+            if link in seen:
+                continue
+            seen.add(link)
+            new_items.append({
+                "title": clean(item.get("title", "")),
+                "link": link,
+                "platform": label,
+                "keyword": kw,
+                "source": clean(item.get("bloggername") or item.get("cafename", "")),
+                "date": parse_date(item.get("postdate", "")),
+                "content": clean(item.get("description", "")),
+                "collected": datetime.now().strftime("%Y-%m-%d"),
+            })
+
+all_data = new_items + existing
+all_data.sort(key=lambda x: x["date"], reverse=True)
+
+with open("data.json", "w", encoding="utf-8") as f:
+    json.dump(all_data, f, ensure_ascii=False, indent=2)
+
+print(f"완료! 신규 {len(new_items)}건 / 전체 {len(all_data)}건")`;
+
+  navigator.clipboard.writeText(code).then(() => {
+    showStatus('copy-status', '복사됐어요! GitHub tracker.py에 붙여넣기 해주세요.');
+  });
+}
+
+function exportCSV() {
+  const filtered = getFiltered();
+  if (!filtered.length) return alert('데이터가 없어요.');
+  const headers = ['수집일','플랫폼','키워드','제목','출처','게시일','내용','링크'];
+  const rows = filtered.map(d=>[
+    d.collected, d.platform, d.keyword,
+    `"${(d.title||'').replace(/"/g,'""')}"`,
+    d.source||'', d.date,
+    `"${(d.content||'').replace(/"/g,'""')}"`,
+    d.link
+  ].join(','));
+  const csv = '\uFEFF'+[headers.join(','),...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `larasweet_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+loadData();
+</script>
+</body>
+</html>
