@@ -1,0 +1,32 @@
+name: 라라스윗 네이버 트래커
+
+on:
+  schedule:
+    - cron: '0 1 * * 2'
+    - cron: '0 1 * * 5'
+  workflow_dispatch:
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 트래킹 실행
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python tracker.py
+
+      - name: 결과 저장
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data.json
+          git diff --staged --quiet || git commit -m "자동 수집: $(date '+%Y-%m-%d')"
+          git push
