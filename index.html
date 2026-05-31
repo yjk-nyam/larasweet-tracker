@@ -278,35 +278,7 @@ function saveAll() {
   localStorage.setItem('ls_data', JSON.stringify(allData));
 }
 
-// 키워드 볼드 강조 함수
-function highlightKeywords(text, keyword) {
-  if (!text || !keyword) return text || '';
-  // 키워드를 단어 단위로 분리해서 각각 강조
-  const parts = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // 키워드의 부분 문자열도 강조 (예: "라라스윗요거트바" → "라라스윗", "요거트바" 도 강조)
-  const subKeywords = [];
-  if (keyword.length > 2) {
-    subKeywords.push(parts);
-    // 2글자 이상 부분만 추가
-    for (let i = 0; i < keyword.length - 1; i++) {
-      for (let j = i + 2; j <= keyword.length; j++) {
-        const sub = keyword.slice(i, j);
-        if (sub.length >= 2) subKeywords.push(sub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-      }
-    }
-  } else {
-    subKeywords.push(parts);
-  }
-  // 가장 긴 매칭 우선으로 정렬
-  subKeywords.sort((a, b) => b.length - a.length);
-  const uniqueSubs = [...new Set(subKeywords)].slice(0, 5); // 상위 5개만
-  let result = text;
-  uniqueSubs.forEach(sub => {
-    const regex = new RegExp(`(${sub})`, 'gi');
-    result = result.replace(regex, '<span class="kw-highlight">$1</span>');
-  });
-  return result;
-}
+function highlightKeywords(text) { return text || ''; }
 
 function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
