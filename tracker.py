@@ -9,6 +9,8 @@ NAVER_CLIENT_ID = os.environ["NAVER_CLIENT_ID"]
 NAVER_CLIENT_SECRET = os.environ["NAVER_CLIENT_SECRET"]
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 
+BRAND = "라라스윗"
+
 KEYWORDS = [
     "라라스윗요거트바",
     "라라스윗망고요거트바",
@@ -18,23 +20,17 @@ KEYWORDS = [
     "애플망고생요거트바",
 ]
 
-BRAND = "라라스윗"
-
-def get_search_query(keyword):
-    """브랜드명 제거 → 제품명으로 검색, 제품명으로 필터링"""
+def get_search_params(keyword):
+    """검색어와 필수 포함 단어 목록 반환"""
     if keyword.startswith(BRAND):
         product = keyword[len(BRAND):]
-        return product, product
-    return keyword, keyword
+        return product, [BRAND, product]  # 라라스윗 + 제품명 둘 다 포함
+    return keyword, [keyword]
 
-def contains_filter(text, filter_word):
-    return filter_word.lower() in (text or "").lower()
-
-def should_include(item, filter_word):
-    title = clean(item.get("title", ""))
-    desc = clean(item.get("description", "") or item.get("content", ""))
-    source = clean(item.get("bloggername", "") or item.get("cafename", "") or item.get("source", ""))
-    return contains_filter(title, filter_word) or contains_filter(desc, filter_word) or contains_filter(source, filter_word)
+def should_include(text_fields, must_contain):
+    """must_contain 단어들이 모두 포함된 경우만 True"""
+    combined = " ".join(text_fields).lower()
+    return all(word.lower() in combined for word in must_contain)
 
 def naver_search(query, stype):
     url = f"https://openapi.naver.com/v1/search/{stype}.json?query={urllib.parse.quote(query)}&display=50&sort=date"
@@ -90,45 +86,51 @@ seen = set(d["link"] for d in existing)
 new_items = []
 
 for kw in KEYWORDS:
-    search_query, filter_word = get_search_query(kw)
-    print(f"검색 중: {kw} → '{search_query}' 검색, '{filter_word}' 필터")
+    search_query, must_contain = get_search_params(kw)
+    print(f"검색 중: {kw} → '{search_query}' 검색, 필수포함: {must_contain}")
 
     # 네이버 블로그 + 카페
     for stype, label in [("blog", "네이버 블로그"), ("cafearticle", "네이버 카페")]:
         for item in naver_search(search_query, stype):
-            if not should_include(item, filter_word):
+            title = clean(item.get("title", ""))
+            desc = clean(item.get("description", ""))
+            source = clean(item.get("bloggername") or item.get("cafename", ""))
+            if not should_include([title, desc, source], must_contain):
                 continue
             link = item.get("link", "")
             if link in seen:
                 continue
             seen.add(link)
             new_items.append({
-                "title": clean(item.get("title", "")),
+                "title": title,
                 "link": link,
                 "platform": label,
                 "keyword": kw,
-                "source": clean(item.get("bloggername") or item.get("cafename", "")),
+                "source": source,
                 "date": parse_date(item.get("postdate", "")),
-                "content": clean(item.get("description", "")),
+                "content": desc,
                 "collected": datetime.now().strftime("%Y-%m-%d"),
             })
 
     # 유튜브
     for item in youtube_search(search_query):
-        if not contains_filter(item.get("title",""), filter_word) and not contains_filter(item.get("content",""), filter_word):
+        title = item.get("title", "")
+        content = item.get("content", "")
+        source = item.get("source", "")
+        if not should_include([title, content, source], must_contain):
             continue
         link = item.get("link", "")
         if link in seen:
             continue
         seen.add(link)
         new_items.append({
-            "title": item.get("title", ""),
+            "title": title,
             "link": link,
             "platform": "유튜브",
             "keyword": kw,
-            "source": item.get("source", ""),
+            "source": source,
             "date": item.get("date", ""),
-            "content": item.get("content", ""),
+            "content": content,
             "collected": datetime.now().strftime("%Y-%m-%d"),
         })
 
