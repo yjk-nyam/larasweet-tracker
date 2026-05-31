@@ -5,8 +5,9 @@ import os
 import re
 from datetime import datetime
 
-CLIENT_ID = os.environ["NAVER_CLIENT_ID"]
-CLIENT_SECRET = os.environ["NAVER_CLIENT_SECRET"]
+NAVER_CLIENT_ID = os.environ["NAVER_CLIENT_ID"]
+NAVER_CLIENT_SECRET = os.environ["NAVER_CLIENT_SECRET"]
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 
 KEYWORDS = [
     "라라스윗요거트바",
@@ -17,20 +18,60 @@ KEYWORDS = [
     "애플망고생요거트바",
 ]
 
-def search(query, stype):
+BRAND = "라라스윗"
+
+def get_search_query(keyword):
+    """브랜드명 제거 → 제품명으로 검색, 제품명으로 필터링"""
+    if keyword.startswith(BRAND):
+        product = keyword[len(BRAND):]
+        return product, product
+    return keyword, keyword
+
+def contains_filter(text, filter_word):
+    return filter_word.lower() in (text or "").lower()
+
+def should_include(item, filter_word):
+    title = clean(item.get("title", ""))
+    desc = clean(item.get("description", "") or item.get("content", ""))
+    source = clean(item.get("bloggername", "") or item.get("cafename", "") or item.get("source", ""))
+    return contains_filter(title, filter_word) or contains_filter(desc, filter_word) or contains_filter(source, filter_word)
+
+def naver_search(query, stype):
     url = f"https://openapi.naver.com/v1/search/{stype}.json?query={urllib.parse.quote(query)}&display=50&sort=date"
     req = urllib.request.Request(url)
-    req.add_header("X-Naver-Client-Id", CLIENT_ID)
-    req.add_header("X-Naver-Client-Secret", CLIENT_SECRET)
+    req.add_header("X-Naver-Client-Id", NAVER_CLIENT_ID)
+    req.add_header("X-Naver-Client-Secret", NAVER_CLIENT_SECRET)
     try:
         res = urllib.request.urlopen(req)
         return json.loads(res.read().decode("utf-8")).get("items", [])
     except Exception as e:
-        print(f"오류: {stype}/{query}: {e}")
+        print(f"네이버 오류: {stype}/{query}: {e}")
+        return []
+
+def youtube_search(query):
+    if not YOUTUBE_API_KEY:
+        return []
+    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={urllib.parse.quote(query)}&type=video&order=date&maxResults=50&key={YOUTUBE_API_KEY}"
+    try:
+        res = urllib.request.urlopen(url)
+        data = json.loads(res.read().decode("utf-8"))
+        results = []
+        for item in data.get("items", []):
+            results.append({
+                "title": item["snippet"]["title"],
+                "link": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+                "platform": "유튜브",
+                "source": item["snippet"]["channelTitle"],
+                "date": item["snippet"]["publishedAt"][:10],
+                "content": item["snippet"]["description"],
+            })
+        return results
+    except Exception as e:
+        print(f"유튜브 오류: {query}: {e}")
         return []
 
 def clean(t):
-    return re.sub(r"<[^>]+>", "", t)
+    return re.sub(r"<[^>]+>", "", t or "")
 
 def parse_date(d):
     for fmt in ["%a, %d %b %Y %H:%M:%S +0900", "%Y%m%d"]:
@@ -49,9 +90,14 @@ seen = set(d["link"] for d in existing)
 new_items = []
 
 for kw in KEYWORDS:
-    print(f"검색 중: {kw}")
+    search_query, filter_word = get_search_query(kw)
+    print(f"검색 중: {kw} → '{search_query}' 검색, '{filter_word}' 필터")
+
+    # 네이버 블로그 + 카페
     for stype, label in [("blog", "네이버 블로그"), ("cafearticle", "네이버 카페")]:
-        for item in search(kw, stype):
+        for item in naver_search(search_query, stype):
+            if not should_include(item, filter_word):
+                continue
             link = item.get("link", "")
             if link in seen:
                 continue
@@ -66,6 +112,25 @@ for kw in KEYWORDS:
                 "content": clean(item.get("description", "")),
                 "collected": datetime.now().strftime("%Y-%m-%d"),
             })
+
+    # 유튜브
+    for item in youtube_search(search_query):
+        if not contains_filter(item.get("title",""), filter_word) and not contains_filter(item.get("content",""), filter_word):
+            continue
+        link = item.get("link", "")
+        if link in seen:
+            continue
+        seen.add(link)
+        new_items.append({
+            "title": item.get("title", ""),
+            "link": link,
+            "platform": "유튜브",
+            "keyword": kw,
+            "source": item.get("source", ""),
+            "date": item.get("date", ""),
+            "content": item.get("content", ""),
+            "collected": datetime.now().strftime("%Y-%m-%d"),
+        })
 
 all_data = new_items + existing
 all_data.sort(key=lambda x: x["date"], reverse=True)
