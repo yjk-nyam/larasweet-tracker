@@ -59,12 +59,12 @@ button.btn-primary { background: var(--text); color: #fff; border-color: var(--t
 button.btn-primary:hover { opacity: 0.88; }
 button.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
 button.btn-accent:hover { opacity: 0.88; }
+button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .period-btn { font-size: 12px; padding: 5px 10px; }
 .period-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
 .date-sep { font-size: 12px; color: var(--muted); }
 
-/* 표 스타일 */
 .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -74,19 +74,15 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align:
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--bg); }
 
-.td-product { font-weight: 700; font-size: 12px; white-space: nowrap; }
-.td-platform { white-space: nowrap; }
-.td-source { color: var(--muted); font-size: 12px; white-space: nowrap; }
-.td-content { max-width: 400px; line-height: 1.6; color: var(--text); }
-.td-content.expanded { max-width: none; }
-.td-link a { color: var(--accent); font-size: 12px; font-family: var(--mono); text-decoration: none; white-space: nowrap; }
-.td-link a:hover { text-decoration: underline; }
-.td-date { color: var(--muted); font-size: 12px; white-space: nowrap; font-family: var(--mono); }
-.td-kw { font-size: 11px; color: var(--muted); white-space: nowrap; }
-
 .badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; white-space: nowrap; display: inline-block; }
 .badge-blog { background: var(--accent-light); color: var(--accent-text); }
 .badge-cafe { background: #EBF5FB; color: #1A5276; }
+.badge-manual { background: #F4ECF7; color: #6C3483; }
+
+.td-source { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.td-link a { color: var(--accent); font-size: 12px; font-family: var(--mono); text-decoration: none; white-space: nowrap; }
+.td-link a:hover { text-decoration: underline; }
+.td-date { color: var(--muted); font-size: 12px; white-space: nowrap; font-family: var(--mono); }
 
 .expand-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 11px; padding: 2px 4px; margin-top: 4px; display: block; font-family: var(--sans); }
 .expand-btn:hover { color: var(--accent); }
@@ -96,14 +92,30 @@ tr:hover td { background: var(--bg); }
 .loading { text-align: center; padding: 48px; color: var(--muted); font-size: 13px; }
 .updated { font-size: 12px; color: var(--muted); font-family: var(--mono); }
 .status-msg { font-size: 12px; color: var(--accent); font-weight: 500; margin-left: 8px; }
+.status-err { color: var(--danger); }
 
-/* 키워드 관리 */
 .kw-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .kw-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 99px; padding: 5px 12px; font-size: 13px; font-family: var(--mono); color: var(--text); }
 .kw-chip button { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; line-height: 1; padding: 0; display: flex; align-items: center; transition: color 0.15s; }
 .kw-chip button:hover { color: var(--danger); }
 .kw-add-row { display: flex; gap: 8px; align-items: center; }
 .notice { background: var(--accent-light); border: 1px solid #a9dfbf; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; color: var(--accent-text); margin-top: 12px; line-height: 1.7; }
+.notice-warn { background: #FEF9E7; border-color: #F9E79F; color: #7D6608; }
+
+.progress-bar { background: var(--bg); border-radius: 99px; height: 6px; margin-top: 8px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s; }
+
+/* 수동 입력 모달 */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius); padding: 24px; width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+.modal-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+.form-row { margin-bottom: 12px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 4px; display: block; }
+.form-input { width: 100%; font-size: 13px; }
+.form-row textarea { width: 100%; font-family: var(--sans); font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 12px; resize: vertical; outline: none; }
+.form-row textarea:focus { border-color: var(--accent); }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 </style>
 </head>
 <body>
@@ -115,9 +127,54 @@ tr:hover td { background: var(--bg); }
   </div>
   <div style="display:flex;align-items:center;gap:12px">
     <span class="updated" id="updated-at"></span>
+    <button class="btn" onclick="openManualModal()">+ 수동 입력</button>
     <button class="btn" onclick="exportCSV()">↓ CSV</button>
   </div>
 </header>
+
+<!-- 수동 입력 모달 -->
+<div class="modal-overlay" id="manual-modal">
+  <div class="modal">
+    <div class="modal-title">수동 입력</div>
+    <div class="form-row">
+      <label class="form-label">플랫폼</label>
+      <select id="m-platform" class="form-input">
+        <option value="인스타그램">인스타그램</option>
+        <option value="X (트위터)">X (트위터)</option>
+        <option value="유튜브">유튜브</option>
+        <option value="기타">기타</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">키워드</label>
+      <select id="m-keyword" class="form-input"></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">채널명 / 계정명</label>
+      <input type="text" id="m-source" class="form-input" placeholder="예: @larasweet_official">
+    </div>
+    <div class="form-row">
+      <label class="form-label">제목 / 내용 요약</label>
+      <input type="text" id="m-title" class="form-input" placeholder="게시물 제목이나 핵심 내용">
+    </div>
+    <div class="form-row">
+      <label class="form-label">본문 내용 (핵심 문장)</label>
+      <textarea id="m-content" rows="3" placeholder="제품 관련 핵심 문장을 그대로 입력해 주세요"></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">URL</label>
+      <input type="text" id="m-link" class="form-input" placeholder="https://...">
+    </div>
+    <div class="form-row">
+      <label class="form-label">게시일</label>
+      <input type="date" id="m-date" class="form-input">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeManualModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveManual()">저장</button>
+    </div>
+  </div>
+</div>
 
 <div class="main">
   <div class="tabs">
@@ -129,8 +186,8 @@ tr:hover td { background: var(--bg); }
   <div class="pane active" id="pane-results">
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-label">전체</div><div class="stat-val" id="s-total">—</div></div>
-      <div class="stat-card"><div class="stat-label">블로그</div><div class="stat-val" id="s-blog">—</div></div>
-      <div class="stat-card"><div class="stat-label">카페</div><div class="stat-val" id="s-cafe">—</div></div>
+      <div class="stat-card"><div class="stat-label">블로그·카페</div><div class="stat-val" id="s-naver">—</div></div>
+      <div class="stat-card"><div class="stat-label">수동 입력</div><div class="stat-val" id="s-manual">—</div></div>
       <div class="stat-card"><div class="stat-label">기간 내 결과</div><div class="stat-val" id="s-filtered">—</div></div>
     </div>
 
@@ -140,6 +197,10 @@ tr:hover td { background: var(--bg); }
         <option value="">전체 채널</option>
         <option value="네이버 블로그">블로그</option>
         <option value="네이버 카페">카페</option>
+        <option value="인스타그램">인스타그램</option>
+        <option value="X (트위터)">X (트위터)</option>
+        <option value="유튜브">유튜브</option>
+        <option value="기타">기타</option>
       </select>
       <input type="text" class="search-input" id="f-q" placeholder="내용 검색..." oninput="render()">
     </div>
@@ -163,7 +224,7 @@ tr:hover td { background: var(--bg); }
         <table>
           <thead>
             <tr>
-              <th>제품</th>
+              <th>제품(키워드)</th>
               <th>채널</th>
               <th>채널명</th>
               <th>내용</th>
@@ -187,15 +248,16 @@ tr:hover td { background: var(--bg); }
       <div class="kw-grid" id="kw-chips"></div>
       <div class="kw-add-row">
         <input type="text" id="new-kw" placeholder="새 키워드 입력..." style="flex:1" onkeydown="if(event.key==='Enter') addKw()">
-        <button class="btn btn-accent" onclick="addKw()">+ 추가</button>
+        <button class="btn btn-accent" id="add-kw-btn" onclick="addKw()">+ 추가 및 즉시 수집</button>
         <span class="status-msg" id="kw-status"></span>
       </div>
-      <div class="notice" style="margin-top:16px">
-        키워드 변경 후 아래 버튼으로 <strong>tracker.py 코드를 복사해서 GitHub에 붙여넣기</strong> 해야 다음 수집에 반영돼요.
+      <div id="kw-progress" style="display:none;margin-top:12px">
+        <div style="font-size:12px;color:var(--muted)" id="kw-progress-text">수집 중...</div>
+        <div class="progress-bar"><div class="progress-fill" id="kw-progress-fill" style="width:0%"></div></div>
       </div>
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-        <button class="btn btn-primary" onclick="copyTrackerCode()">tracker.py 코드 복사</button>
-        <span class="status-msg" id="copy-status"></span>
+      <div class="notice" style="margin-top:16px">
+        키워드 추가 시 네이버 블로그·카페를 즉시 검색해서 결과에 반영해요.<br>
+        GitHub Actions 자동 수집은 매주 화·금 오전 10시에 실행돼요.
       </div>
     </div>
 
@@ -207,10 +269,13 @@ tr:hover td { background: var(--bg); }
 </div>
 
 <script>
-let allData = [];
+let allData = JSON.parse(localStorage.getItem('ls_data') || '[]');
 let keywords = JSON.parse(localStorage.getItem('ls_keywords') || '["라라스윗요거트바","라라스윗망고요거트바","라라스윗듬뿍바","라라스윗딸기듬뿍바","라라스윗제로바","애플망고생요거트바"]');
 
-function saveKeywords() { localStorage.setItem('ls_keywords', JSON.stringify(keywords)); }
+function saveAll() {
+  localStorage.setItem('ls_keywords', JSON.stringify(keywords));
+  localStorage.setItem('ls_data', JSON.stringify(allData));
+}
 
 function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -223,22 +288,58 @@ function showTab(name, btn) {
 async function loadData() {
   try {
     const res = await fetch('data.json?t=' + Date.now());
-    allData = await res.json();
+    const remote = await res.json();
+    const existingLinks = new Set(allData.map(d => d.link));
+    remote.forEach(d => { if (!existingLinks.has(d.link)) allData.push(d); });
     allData.sort((a,b) => b.date.localeCompare(a.date));
-    updateStats();
-    populateFilters();
-    setDefaultDates(7);
-    render();
-    document.getElementById('updated-at').textContent = '마지막 수집: ' + (allData[0]?.collected || '—');
-  } catch(e) {
-    document.getElementById('result-tbody').innerHTML = '<tr><td colspan="7"><div class="empty">데이터를 불러올 수 없어요.<br>GitHub Actions가 아직 실행 전일 수 있어요.</div></td></tr>';
+    saveAll();
+  } catch(e) {}
+  updateStats();
+  populateFilters();
+  setDefaultDates(7);
+  render();
+  const latest = allData.filter(d=>d.collected).sort((a,b)=>b.collected.localeCompare(a.collected))[0];
+  document.getElementById('updated-at').textContent = latest ? '마지막 수집: ' + latest.collected : '';
+}
+
+function cleanHtml(t) { return (t||'').replace(/<[^>]+>/g, ''); }
+
+async function searchNaver(keyword) {
+  const results = [];
+  for (const type of ['blog', 'cafearticle']) {
+    try {
+      const res = await fetch(`/.netlify/functions/search?query=${encodeURIComponent(keyword)}&type=${type}`);
+      const items = await res.json();
+      const label = type === 'blog' ? '네이버 블로그' : '네이버 카페';
+      items.forEach(item => {
+        results.push({
+          title: cleanHtml(item.title || ''),
+          link: item.link || '',
+          platform: label,
+          keyword,
+          source: cleanHtml(item.bloggername || item.cafename || ''),
+          date: parseDate(item.postdate || ''),
+          content: cleanHtml(item.description || ''),
+          collected: new Date().toISOString().slice(0,10),
+        });
+      });
+    } catch(e) {}
   }
+  return results;
+}
+
+function parseDate(d) {
+  if (!d) return '';
+  if (d.length === 8) return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8);
+  try {
+    return new Date(d).toISOString().slice(0,10);
+  } catch(e) { return d; }
 }
 
 function updateStats() {
   document.getElementById('s-total').textContent = allData.length;
-  document.getElementById('s-blog').textContent = allData.filter(d=>d.platform==='네이버 블로그').length;
-  document.getElementById('s-cafe').textContent = allData.filter(d=>d.platform==='네이버 카페').length;
+  document.getElementById('s-naver').textContent = allData.filter(d=>d.platform==='네이버 블로그'||d.platform==='네이버 카페').length;
+  document.getElementById('s-manual').textContent = allData.filter(d=>d.manual).length;
 }
 
 function populateFilters() {
@@ -250,10 +351,8 @@ function populateFilters() {
 
 function setDefaultDates(days) {
   if (days === 0) { document.getElementById('f-from').value = ''; document.getElementById('f-to').value = ''; return; }
-  const to = new Date();
-  const from = new Date(Date.now() - days * 86400000);
-  document.getElementById('f-to').value = to.toISOString().slice(0,10);
-  document.getElementById('f-from').value = from.toISOString().slice(0,10);
+  document.getElementById('f-to').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-from').value = new Date(Date.now()-days*86400000).toISOString().slice(0,10);
 }
 
 function setPeriod(days, btn) {
@@ -275,7 +374,7 @@ function getFiltered() {
   return allData.filter(d =>
     (!kw || d.keyword === kw) &&
     (!pl || d.platform === pl) &&
-    (!q || d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q) || (d.source||'').toLowerCase().includes(q)) &&
+    (!q || (d.title||'').toLowerCase().includes(q) || (d.content||'').toLowerCase().includes(q) || (d.source||'').toLowerCase().includes(q)) &&
     (!from || d.date >= from) &&
     (!to || d.date <= to)
   );
@@ -294,17 +393,19 @@ function render() {
     const content = d.content || '—';
     const short = content.length > 80 ? content.slice(0, 80) + '...' : content;
     const needsExpand = content.length > 80;
+    const badgeClass = d.manual ? 'badge-manual' : (d.platform==='네이버 블로그'?'badge-blog':'badge-cafe');
+    const platformLabel = d.platform === '네이버 블로그' ? '블로그' : d.platform === '네이버 카페' ? '카페' : d.platform;
     return `
     <tr>
-      <td class="td-product">${d.keyword}</td>
-      <td class="td-platform"><span class="badge ${d.platform==='네이버 블로그'?'badge-blog':'badge-cafe'}">${d.platform==='네이버 블로그'?'블로그':'카페'}</span></td>
+      <td style="font-weight:700;font-size:12px;white-space:nowrap">${d.keyword}</td>
+      <td><span class="badge ${badgeClass}">${platformLabel}</span></td>
       <td class="td-source">${d.source || '—'}</td>
-      <td class="td-content" id="content-${i}">
+      <td style="max-width:380px">
         <div style="font-weight:500;font-size:13px;margin-bottom:3px">${d.title}</div>
-        <div style="color:var(--muted);font-size:12px" id="content-text-${i}">${short}</div>
-        ${needsExpand ? `<button class="expand-btn" id="expand-btn-${i}" onclick="toggleExpand(${i}, ${JSON.stringify(content).replace(/'/g,"\\'")},'${short.replace(/'/g,"\\'")}')">더 보기</button>` : ''}
+        <div style="color:var(--muted);font-size:12px" id="ct-${i}">${short}</div>
+        ${needsExpand ? `<button class="expand-btn" id="eb-${i}" onclick="toggleExpand(${i},${JSON.stringify(content)},${JSON.stringify(short)})">더 보기</button>` : ''}
       </td>
-      <td class="td-link"><a href="${d.link}" target="_blank">원문 보기 →</a></td>
+      <td class="td-link">${d.link ? `<a href="${d.link}" target="_blank">원문 보기 →</a>` : '—'}</td>
       <td class="td-date">${d.date}</td>
       <td class="td-date">${d.collected || '—'}</td>
     </tr>`;
@@ -312,21 +413,18 @@ function render() {
 }
 
 function toggleExpand(i, full, short) {
-  const el = document.getElementById('content-text-' + i);
-  const btn = document.getElementById('expand-btn-' + i);
-  if (btn.textContent === '더 보기') {
-    el.textContent = full;
-    btn.textContent = '접기';
-  } else {
-    el.textContent = short;
-    btn.textContent = '더 보기';
-  }
+  const el = document.getElementById('ct-' + i);
+  const btn = document.getElementById('eb-' + i);
+  if (btn.textContent === '더 보기') { el.textContent = full; btn.textContent = '접기'; }
+  else { el.textContent = short; btn.textContent = '더 보기'; }
 }
 
 function renderKwChips() {
   document.getElementById('kw-chips').innerHTML = keywords.map((k,i) => `
     <div class="kw-chip"><span>${k}</span><button onclick="removeKw(${i})" title="삭제">×</button></div>
   `).join('');
+  const sel = document.getElementById('m-keyword');
+  if (sel) sel.innerHTML = keywords.map(k=>`<option value="${k}">${k}</option>`).join('');
 }
 
 function renderKwStats() {
@@ -345,18 +443,57 @@ function renderKwStats() {
   `).join('');
 }
 
-function addKw() {
+async function addKw() {
   const inp = document.getElementById('new-kw');
   const v = inp.value.trim();
   if (!v) return;
   if (keywords.includes(v)) { showStatus('kw-status', '이미 있는 키워드예요.'); return; }
-  keywords.push(v); saveKeywords(); inp.value = '';
-  renderKwChips(); populateFilters(); showStatus('kw-status', '추가됐어요!');
+
+  keywords.push(v);
+  saveAll();
+  inp.value = '';
+  renderKwChips();
+  populateFilters();
+
+  // 즉시 수집
+  const btn = document.getElementById('add-kw-btn');
+  btn.disabled = true;
+  const prog = document.getElementById('kw-progress');
+  const progText = document.getElementById('kw-progress-text');
+  const progFill = document.getElementById('kw-progress-fill');
+  prog.style.display = 'block';
+  progText.textContent = `"${v}" 검색 중...`;
+  progFill.style.width = '30%';
+
+  try {
+    const results = await searchNaver(v);
+    progFill.style.width = '80%';
+    const existing = new Set(allData.map(d=>d.link));
+    let added = 0;
+    results.forEach(r => { if (r.link && !existing.has(r.link)) { allData.push(r); added++; } });
+    allData.sort((a,b) => b.date.localeCompare(a.date));
+    saveAll();
+    progFill.style.width = '100%';
+    progText.textContent = `완료! ${added}건 추가됐어요.`;
+    updateStats();
+    populateFilters();
+    render();
+    setTimeout(() => { prog.style.display = 'none'; progFill.style.width = '0%'; }, 2000);
+  } catch(e) {
+    progText.textContent = '수집 중 오류가 났어요. 나중에 자동 수집에서 반영돼요.';
+    setTimeout(() => { prog.style.display = 'none'; }, 3000);
+  }
+  btn.disabled = false;
+  showStatus('kw-status', `"${v}" 추가됐어요!`);
 }
 
 function removeKw(i) {
   if (!confirm(`"${keywords[i]}" 키워드를 삭제할까요?`)) return;
-  keywords.splice(i, 1); saveKeywords(); renderKwChips(); populateFilters(); showStatus('kw-status', '삭제됐어요.');
+  keywords.splice(i, 1);
+  saveAll();
+  renderKwChips();
+  populateFilters();
+  showStatus('kw-status', '삭제됐어요.');
 }
 
 function showStatus(id, msg) {
@@ -365,9 +502,45 @@ function showStatus(id, msg) {
   setTimeout(() => el.textContent = '', 2500);
 }
 
-function copyTrackerCode() {
-  const code = `import urllib.request\nimport urllib.parse\nimport json\nimport os\nimport re\nfrom datetime import datetime\n\nCLIENT_ID = os.environ["NAVER_CLIENT_ID"]\nCLIENT_SECRET = os.environ["NAVER_CLIENT_SECRET"]\n\nKEYWORDS = ${JSON.stringify(keywords, null, 2)}\n\ndef search(query, stype):\n    url = f"https://openapi.naver.com/v1/search/{stype}.json?query={urllib.parse.quote(query)}&display=50&sort=date"\n    req = urllib.request.Request(url)\n    req.add_header("X-Naver-Client-Id", CLIENT_ID)\n    req.add_header("X-Naver-Client-Secret", CLIENT_SECRET)\n    try:\n        res = urllib.request.urlopen(req)\n        return json.loads(res.read().decode("utf-8")).get("items", [])\n    except Exception as e:\n        print(f"오류: {stype}/{query}: {e}")\n        return []\n\ndef clean(t):\n    return re.sub(r"<[^>]+>", "", t)\n\ndef parse_date(d):\n    for fmt in ["%a, %d %b %Y %H:%M:%S +0900", "%Y%m%d"]:\n        try:\n            return datetime.strptime(d, fmt).strftime("%Y-%m-%d")\n        except:\n            pass\n    return d\n\nexisting = []\nif os.path.exists("data.json"):\n    with open("data.json", "r", encoding="utf-8") as f:\n        existing = json.load(f)\n\nseen = set(d["link"] for d in existing)\nnew_items = []\n\nfor kw in KEYWORDS:\n    print(f"검색 중: {kw}")\n    for stype, label in [("blog", "네이버 블로그"), ("cafearticle", "네이버 카페")]:\n        for item in search(kw, stype):\n            link = item.get("link", "")\n            if link in seen:\n                continue\n            seen.add(link)\n            new_items.append({\n                "title": clean(item.get("title", "")),\n                "link": link,\n                "platform": label,\n                "keyword": kw,\n                "source": clean(item.get("bloggername") or item.get("cafename", "")),\n                "date": parse_date(item.get("postdate", "")),\n                "content": clean(item.get("description", "")),\n                "collected": datetime.now().strftime("%Y-%m-%d"),\n            })\n\nall_data = new_items + existing\nall_data.sort(key=lambda x: x["date"], reverse=True)\n\nwith open("data.json", "w", encoding="utf-8") as f:\n    json.dump(all_data, f, ensure_ascii=False, indent=2)\n\nprint(f"완료! 신규 {len(new_items)}건 / 전체 {len(all_data)}건")`;
-  navigator.clipboard.writeText(code).then(() => showStatus('copy-status', '복사됐어요! GitHub tracker.py에 붙여넣기 해주세요.'));
+// 수동 입력
+function openManualModal() {
+  document.getElementById('m-date').value = new Date().toISOString().slice(0,10);
+  renderKwChips();
+  document.getElementById('manual-modal').classList.add('open');
+}
+
+function closeManualModal() {
+  document.getElementById('manual-modal').classList.remove('open');
+  ['m-source','m-title','m-content','m-link'].forEach(id => document.getElementById(id).value = '');
+}
+
+function saveManual() {
+  const platform = document.getElementById('m-platform').value;
+  const keyword = document.getElementById('m-keyword').value;
+  const source = document.getElementById('m-source').value.trim();
+  const title = document.getElementById('m-title').value.trim();
+  const content = document.getElementById('m-content').value.trim();
+  const link = document.getElementById('m-link').value.trim();
+  const date = document.getElementById('m-date').value;
+
+  if (!title && !content) { alert('제목 또는 내용을 입력해 주세요.'); return; }
+
+  allData.unshift({
+    title: title || content.slice(0, 50),
+    link,
+    platform,
+    keyword,
+    source,
+    date,
+    content,
+    collected: new Date().toISOString().slice(0,10),
+    manual: true,
+  });
+  saveAll();
+  updateStats();
+  populateFilters();
+  render();
+  closeManualModal();
 }
 
 function exportCSV() {
